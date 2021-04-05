@@ -25,7 +25,8 @@ int main(int argc, char *argv[])
 	QFile& inputFile = QFile(inputFileName);
 	if (!inputFile.open(QIODevice::ReadOnly))
 	{
-		qCritical() << "Error: Unable to open input file " << inputFileName << endl;
+		
+		qCritical() << "DEC: Error: Unable to open input file " << inputFileName << endl;
 		return -1;
 	}
 

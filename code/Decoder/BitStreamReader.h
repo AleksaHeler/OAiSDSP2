@@ -30,7 +30,24 @@ private:
 
 	// read N bytes from input stream
 	// returns number of bytes read (smaller of size if EOF reached)
-	int readData(uchar data[], int size);
+	int readData(char data[], int size);
+
+	//decode methods
+	void YUV420toRGB(const uchar Y_buff[], const char U_buff[], const char V_buff[], int x, int y, uchar rgbImg[]);
+
+	void GenerateDCTmatrix(double* DCTKernel, int order);
+	void IDCT(const short input[], uchar output[], int N, double* DCTKernel);
+	void performIDCT(uchar Y_buff[], short* short_buff, int xSize, int ySize, int N, uchar* input2, int xSize2, int ySize2);
+
+	void extendBorders(uchar* input, int xSize, int ySize, int N, uchar** p_output, int* newXSize, int* newYSize);
+	void cropImage(uchar* input, int xSize, int ySize, uchar* output, int newXSize, int newYSize);
+
+	void performInverseDCTQuantization(short* dctCoeffs);
+
+	void zeroRunLengthDecode(std::vector<short>& v, short* output, int xSize, int ySize);
+
+	static uchar quantizationMatrix[64];
+
 
 public:
 	// initialize reader

@@ -25,7 +25,8 @@ int main(int argc, char *argv[])
 	QImage inputImage = QImage(inputFileName).convertToFormat(QImage::Format_RGB888);
 	if (inputImage.isNull())
 	{
-		qCritical() << "Error: Unable to open input image: " << inputFileName << endl;
+		qCritical() << argv[0] << endl;
+		qCritical() << "ENC: Error: Unable to open input image: " << inputFileName << endl;
 		return -1;
 	}
 
