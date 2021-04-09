@@ -6,6 +6,7 @@
 #include <stdio.h> 
 #include <stdlib.h>
 #include <stdint.h>
+#include <vector>
 #include "BitWritter.h"
 #include "MinHeap.h"
 #include "MinHeapNode.h"
@@ -36,7 +37,7 @@ int isLeaf(struct MinHeapNode* root);
 
 struct MinHeap* createAndBuildMinHeap(int16_t data[], int_least32_t  freq[], int_least32_t  size);
 
-//encoder.c functions
+
 struct MinHeapNode* buildHuffmanTree(int16_t data[], int_least32_t  freq[], int_least32_t  size);
 
 void calculateCodes(struct MinHeapNode* root, uint8_t  arr[], int_least32_t  top, uint8_t** codes, int16_t* code_len);
@@ -44,3 +45,5 @@ void calculateCodes(struct MinHeapNode* root, uint8_t  arr[], int_least32_t  top
 void writeDict(QFile& out, struct MinHeapNode* root);
 
 void getDictSize(struct MinHeapNode* root, ushort* ret_val);
+
+bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v, char* U_buff, char* V_buff, int xSize, int ySize);

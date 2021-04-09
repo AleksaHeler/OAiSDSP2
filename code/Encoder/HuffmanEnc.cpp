@@ -1,8 +1,6 @@
-
-#include "MinHeapFunctions.h"
+#include "HuffmanEnc.h"
 #include <stdlib.h>
 #include <stdio.h>
-
 
 
 // A utility function allocate a new 
@@ -263,26 +261,23 @@ void writeDict(QFile& out, struct MinHeapNode* root)
 	const uint8_t data = 2;
 
 	// Assign 0 to left edge and recur 
-	if (root->left) {
-		//fwrite(&left, 1, 1, out);
+	if (root->left) 
+	{
 		out.putChar(left);
 		writeDict(out, root->left);
 	}
 
 	// Assign 1 to right edge and recur 
-	if (root->right) {
-		//fwrite(&right, 1, 1, out);
+	if (root->right) 
+	{
 		out.putChar(right);
 		writeDict(out, root->right);
 	}
 
-	if (isLeaf(root)) {
-		//fwrite(&data, 1, 1, out);
-		//fwrite(&root->data, 2, 1, out);
+	if (isLeaf(root)) 
+	{
 		out.putChar(data);
-
 		out.putChar(*(((uchar*)&root->data) + 1));
-
 		out.putChar(*((uchar*)&root->data));
 	}
 }
@@ -292,31 +287,144 @@ void getDictSize(struct MinHeapNode* root, ushort* ret_val) {
 	const uint8_t right = 1;
 	const uint8_t data = 2;
 
-	// Assign 0 to left edge and recur 
 	if (root->left) {
-		//fwrite(&left, 1, 1, out);
 		(*ret_val)++;
 		getDictSize(root->left, ret_val);
 	}
 
-	// Assign 1 to right edge and recur 
 	if (root->right) {
-		//fwrite(&right, 1, 1, out);
-		//out.putChar(right);
 		(*ret_val)++;
-
 		getDictSize(root->right, ret_val);
 	}
 
-	if (isLeaf(root)) {
-		//fwrite(&data, 1, 1, out);
-		//fwrite(&root->data, 2, 1, out);
-		//out.putChar(data);
-
-		//out.putChar(*(((uchar*)&root->data) + 1));
-
-		//out.putChar(*((uchar*)&root->data));
-
+	if (isLeaf(root)) 
 		(*ret_val) += 3;
+}
+
+bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v, char* U_buff, char* V_buff, int xSize, int ySize)
+{
+	qCritical() << "HuffmanEncoding:";
+
+	int_least32_t* histogram = (int_least32_t*)malloc(sizeof(int_least32_t) * 65536);
+	if (histogram == NULL)
+	{
+		qCritical() << "Memory error" << endl;
+		return false;
 	}
+
+	for (int i = 0; i < 65536; i++)
+		histogram[i] = 0;
+
+	for (auto it = v.begin(); it != v.end(); it++)
+	{
+		histogram[*it + 32768]++;
+	}
+
+	short temp;
+	for (int i = 0; i < xSize*ySize / 4; i += 2)
+	{
+		temp = ((short)U_buff[i] << 8) + U_buff[i + 1];
+		histogram[temp + 32768]++;
+
+		temp = ((short)V_buff[i] << 8) + V_buff[i + 1];
+		histogram[temp + 32768]++;
+	}
+
+	int non_zero_cnt = 0;
+	for (int i = 0; i < 65536; i++)
+	{
+		if (histogram[i] != 0)
+			non_zero_cnt++;
+	}
+
+	int16_t* data = (int16_t*)malloc(non_zero_cnt * sizeof(int16_t));
+	int_least32_t* freqz = (int_least32_t*)malloc(non_zero_cnt * sizeof(int_least32_t));
+
+	qCritical() << "	Initializing data and frequencies...";
+
+	int j = 0;
+	for (int i = 0; i < 65536; i++)
+	{
+		if (histogram[i] != 0)
+		{
+			data[j] = (int16_t)(i - 32768);
+			freqz[j] = histogram[i];
+			j++;
+		}
+	}
+
+	delete[] histogram;
+
+	// Construct Huffman Tree 
+	qCritical() << "	Building Huffman tree...";
+	struct MinHeapNode* root = buildHuffmanTree(data, freqz, non_zero_cnt);
+
+
+	// Print Huffman codes using 
+	// the Huffman tree built above 
+	uint8_t* arr = (uint8_t*)malloc(MAX_TREE_HT * sizeof(uint8_t));
+	if (arr == NULL)
+	{
+		qCritical() << "Memory error" << endl;
+		return false;
+	}
+
+	uint8_t** codes = (uint8_t**)malloc(65536 * sizeof(uint8_t*));
+	if (codes == NULL)
+	{
+		qCritical() << "Memory error" << endl;
+		return false;
+	}
+
+	int16_t* code_len = (int16_t*)malloc(65536 * sizeof(int16_t));
+	if (code_len == NULL)
+	{
+		qCritical() << "Memory error" << endl;
+		return false;
+	}
+
+	qCritical() << "	Calculating codes...";
+	calculateCodes(root, arr, 0, codes, code_len);
+
+	qCritical() << "	Writing dictionary size...";
+	ushort dict_size = 0;
+	getDictSize(root, &dict_size);
+	if (outputFile.putChar(*(((uchar*)&dict_size) + 1)) == false)
+		return false;
+
+	if (outputFile.putChar(*((uchar*)&dict_size)) == false)
+		return false;
+
+	qCritical() << "	Writing dictionary...";
+	writeDict(outputFile, root);
+
+	qCritical() << "	Writing data in encoded format...";
+	//Y writing
+	struct BitWritter bw = { &outputFile, 0, 0 };
+	for (auto it = v.begin(); it != v.end(); it++)
+	{
+		for (int i = 0; i < code_len[*it + 32768]; i++)
+			writeBit(&bw, codes[*it + 32768][i]);
+	}
+	//U writing
+	for (int j = 0; j < xSize*ySize / 4; j += 2)
+	{
+		temp = ((short)U_buff[j] << 8) + U_buff[j + 1];
+		for (int i = 0; i < code_len[temp + 32768]; i++)
+			writeBit(&bw, codes[temp + 32768][i]);
+	}
+	//V writing
+	for (int j = 0; j < xSize*ySize / 4; j += 2)
+	{
+		temp = ((short)V_buff[j] << 8) + V_buff[j + 1];
+		for (int i = 0; i < code_len[temp + 32768]; i++)
+			writeBit(&bw, codes[temp + 32768][i]);
+	}
+
+	flushBitWritter(&bw);
+
+	delete[] data;
+	delete[] freqz;
+
+	return true;
 }

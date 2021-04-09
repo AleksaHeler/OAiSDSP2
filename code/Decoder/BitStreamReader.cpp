@@ -220,7 +220,7 @@ void BitStreamReader::IDCT(const short input[], uchar output[], int N, double* D
 	return;
 }
 
-void BitStreamReader::performIDCT(uchar input[], short* short_buff,  int xSize, int ySize, int N, uchar* input2, int xSize2, int ySize2)
+void BitStreamReader::doIDCTDecompression(uchar input[], short* short_buff,  int xSize, int ySize, int N, uchar* input2, int xSize2, int ySize2)
 {
 	/* Create NxN buffer for one input block */
 	uchar* inBlock = new uchar[N*N];
@@ -349,41 +349,6 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 	// Get image size
 	readImageInfo(xSize, ySize);
 
-	ushort dict_size = readShort();
-	ushort bytes_read = 0;
-
-	struct HuffmanpNode* root = readDict(inputFile, dict_size, &bytes_read);
-
-	struct BitReader br = { inputFile, 0, 0 };
-
-	uint8_t bit = readBit(&br);
-
-	uint32_t data_size = xSize * ySize;
-	std::vector<short> vReader;
-	struct HuffmanpNode* curr = root;
-	while (bit != 0xFF)
-	{
-		if (bit == 0)
-			curr = curr->left;
-		else
-			curr = curr->right;
-
-		// reached leaf node 
-		if (isLeaf(curr))
-		{
-			vReader.push_back(curr->data);
-	
-			curr = root;
-			/*
-			data_size -= 2;
-			if (data_size == 0)
-				break;
-			*/
-		}
-
-		bit = readBit(&br);
-	}
-
 	// Create output image buffer
 	output = new uchar[xSize*ySize*3];
 	uchar* Y_buff = new uchar[xSize*ySize];
@@ -394,45 +359,30 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 	int xSize2, ySize2;
 	uchar* input2;
 	extendBorders(Y_buff, xSize, ySize, 8, &input2, &xSize2, &ySize2);
+	short* dct_coeffs = new short[xSize2 * ySize2];
 
-	short* short_buff = new short[xSize2 * ySize2];
-
-	int i = 0;
+	//decoding huffman data
 	std::vector<short> v;
-	v.push_back(vReader[i]);
-	v.push_back(vReader[i + 1]);
-	while (vReader[i] != 0 || vReader[i + 1] != 0) //eob //proveri da li ce ovo sigurno da se zapise
+	bool ret_val = decodeHuffmanData(inputFile, v, U_buff, V_buff, xSize, ySize);
+	if (ret_val == false)
 	{
-		i += 2;
-		v.push_back(vReader[i]);
-		v.push_back(vReader[i + 1]);
+		qCritical() << "Error in Huffman decoding" << endl;
+		goto cleanup;
 	}
-	i += 2;
-	zeroRunLengthDecode(v, short_buff, xSize2, ySize2);
+	else
+		qCritical() << "Huffman decoding completed successfully" << endl;
 
-	int j = 0;
-	for (j = 0; j < xSize * ySize / 4; j += 2)
-	{
-		U_buff[j] = vReader[i] >> 8;
-		U_buff[j+ 1] = (char)vReader[i++];
-	}
+	zeroRunLengthDecode(v, dct_coeffs, xSize2, ySize2);
 
-	for (j = 0; j < xSize * ySize / 4; j += 2)
-	{
-		V_buff[j] = vReader[i] >> 8;
-		V_buff[j + 1] = (char)vReader[i++];
-	}
-
-
-
-	performIDCT(Y_buff, short_buff, xSize, ySize, 8, input2, xSize2, ySize2);
+	doIDCTDecompression(Y_buff, dct_coeffs, xSize, ySize, 8, input2, xSize2, ySize2);
 	YUV420toRGB(Y_buff, (char*)U_buff, (char*)V_buff, xSize, ySize, output);
 
+cleanup:
 	delete[] Y_buff;
 	delete[] U_buff;
 	delete[] V_buff;
 
-	return true;
+	return ret_val;
 }
 
 

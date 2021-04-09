@@ -1,6 +1,6 @@
 #pragma once
 #include "BitStreamWriter.h"
-#include "MinHeapFunctions.h"
+#include "HuffmanEnc.h"
 
 #define PI 3.14159265359
 
@@ -76,37 +76,45 @@ uchar BitStreamWriter::quantizationMatrix[64] =
 void BitStreamWriter::RGBtoYUV420(const uchar rgbImg[], int x, int y, uchar Y_buff[], char U_buff[], char V_buff[])
 {
 	uchar R, G, B;
-	for (int i = 0; i < x; i += 2)
+	double U, V;
+	for (int i = 0; i<x; i += 2)
 	{
-		for (int j = 0; j < y; j += 2)
+		for (int j = 0; j<y; j += 2)
 		{
 			R = rgbImg[j * 3 * x + i * 3];
 			G = rgbImg[j * 3 * x + i * 3 + 1];
 			B = rgbImg[j * 3 * x + i * 3 + 2];
+
 			Y_buff[j*x + i] = 0.299*R + 0.587*G + 0.114*B;
-			U_buff[j*x / 4 + i / 2] = (-0.14713*R - 0.28886*G + 0.436*B) / 4;
-			V_buff[j*x / 4 + i / 2] = (0.615*R - 0.51499*G - 0.10001*B) / 4;
+			U = (-0.14713*R - 0.28886*G + 0.436*B);
+			V = (R*0.615 - 0.51499*G - 0.10001*B);
 
 			R = rgbImg[j * 3 * x + (i + 1) * 3];
 			G = rgbImg[j * 3 * x + (i + 1) * 3 + 1];
 			B = rgbImg[j * 3 * x + (i + 1) * 3 + 2];
+
 			Y_buff[j*x + (i + 1)] = 0.299*R + 0.587*G + 0.114*B;
-			U_buff[j*x / 4 + i / 2] += (-0.14713*R - 0.28886*G + 0.436*B) / 4;
-			V_buff[j*x / 4 + i / 2] += (0.615*R - 0.51499*G - 0.10001*B) / 4;
+			U += (-0.14713*R - 0.28886*G + 0.436*B);
+			V += (R*0.615 - 0.51499*G - 0.10001*B);
 
 			R = rgbImg[(j + 1) * 3 * x + i * 3];
 			G = rgbImg[(j + 1) * 3 * x + i * 3 + 1];
 			B = rgbImg[(j + 1) * 3 * x + i * 3 + 2];
+
 			Y_buff[(j + 1)*x + i] = 0.299*R + 0.587*G + 0.114*B;
-			U_buff[j*x / 4 + i / 2] += (-0.14713*R - 0.28886*G + 0.436*B) / 4;
-			V_buff[j*x / 4 + i / 2] += (0.615*R - 0.51499*G - 0.10001*B) / 4;
+			U += (-0.14713*R - 0.28886*G + 0.436*B);
+			V += (R*0.615 - 0.51499*G - 0.10001*B);
 
 			R = rgbImg[(j + 1) * 3 * x + (i + 1) * 3];
 			G = rgbImg[(j + 1) * 3 * x + (i + 1) * 3 + 1];
 			B = rgbImg[(j + 1) * 3 * x + (i + 1) * 3 + 2];
+
 			Y_buff[(j + 1)*x + (i + 1)] = 0.299*R + 0.587*G + 0.114*B;
-			U_buff[j*x / 4 + i / 2] += (-0.14713*R - 0.28886*G + 0.436*B) / 4;
-			V_buff[j*x / 4 + i / 2] += (0.615*R - 0.51499*G - 0.10001*B) / 4;
+			U += (-0.14713*R - 0.28886*G + 0.436*B);
+			V += (R*0.615 - 0.51499*G - 0.10001*B);
+
+			U_buff[(j / 2)*x / 2 + i / 2] = U / 4;
+			V_buff[(j / 2)*x / 2 + i / 2] = V / 4;
 		}
 	}
 }
@@ -174,7 +182,7 @@ void BitStreamWriter::DCT(const uchar input[], short output[], int N, double* DC
 	return;
 }
 
-void BitStreamWriter::performDCT(uchar input[], short* output, int xSize, int ySize, int N, uchar* input2, int xSize2, int ySize2)
+void BitStreamWriter::doOnDCTCompression(uchar input[], short* output, int xSize, int ySize, int N, uchar* input2, int xSize2, int ySize2)
 {	
 	/* Create NxN buffer for one input block */
 	uchar* inBlock = new uchar[N*N];
@@ -290,7 +298,7 @@ void BitStreamWriter::doZigZag(short block[], int N, int B)
 				row = i;
 				col = currDiagonalWidth - i - 1;
 			}
-			// OBRADA PIKSELA SA KOORDINATAMA row I col
+			
 			if (currentNumber > B) {
 				block[row*N + col] = 0;
 			}
@@ -312,7 +320,7 @@ void BitStreamWriter::doZigZag(short block[], int N, int B)
 				row = N - i;
 				col = N - currDiagonalWidth + i - 1;
 			}
-			// OBRADA PIKSELA SA KOORDINATAMA row I col
+			
 			if (currentNumber > B)
 				block[row*N + col] = 0;
 
@@ -323,7 +331,7 @@ void BitStreamWriter::doZigZag(short block[], int N, int B)
 	}
 }
 
-void BitStreamWriter::zeroRunLengthEncode(short* block, std::vector<short>* v, int xSize, int ySize) //treba da se prosledi vektor
+void BitStreamWriter::zeroRunLengthEncode(short* block, std::vector<short>* v, int xSize, int ySize)
 {
 	int eob = 0;
 	for (int i = xSize*ySize - 1; i >= 0; i--) //end of block
@@ -344,7 +352,6 @@ void BitStreamWriter::zeroRunLengthEncode(short* block, std::vector<short>* v, i
 			v->push_back(zero_cnt); //numbers of zeros
 			v->push_back(block[i]); //numbers after zeros
 
-			//qCritical() << "(" << zero_cnt << ", " << block[i] << ")";
 			zero_cnt = 0;
 		}
 	}
@@ -370,139 +377,33 @@ bool BitStreamWriter::encode(uchar input[], int xSize, int ySize)
 	if (!ret)
 		return false;
 
+	//RGB to YUV420
 	uchar* Y_buff = new uchar[xSize*ySize];
 	char* U_buff = new char[xSize*ySize / 4];
 	char* V_buff = new char[xSize*ySize / 4];
 	RGBtoYUV420(input, xSize, ySize, Y_buff, U_buff, V_buff);
 
+	//DCT, quantization, zigzag
 	int xSize2, ySize2;
 	uchar* input2;
 	extendBorders(Y_buff, xSize, ySize, 8, &input2, &xSize2, &ySize2);
-	short* output = new short[xSize2 * ySize2];
-	performDCT(Y_buff, output, xSize, ySize, 8, input2, xSize2, ySize2); //tu se poziva kvantizacija i zigzag
+	short* dct_coeffs = new short[xSize2 * ySize2];
+	doOnDCTCompression(Y_buff, dct_coeffs, xSize, ySize, 8, input2, xSize2, ySize2);
 
+	//run length coding on Y component
 	std::vector<short> v;
-	zeroRunLengthEncode(output, &v, xSize2, ySize2); //pazi da se poziva xSize2, ySize2
+	zeroRunLengthEncode(dct_coeffs, &v, xSize2, ySize2);
 
-
-	//huffman encoding
-	int_least32_t* histogram = (int_least32_t*)malloc(sizeof(int_least32_t) * 65536);
-	if (histogram == NULL)
-	{
-		qCritical() << "Memory error" << endl;
-		return false;
-	}
-
-	for (int i = 0; i < 65536; i++)
-		histogram[i] = 0;
-
-	for (auto it = v.begin(); it != v.end(); it++)
-	{
-		histogram[*it + 32768]++;
-	}
-
-	short temp;
-	for (int i = 0; i < xSize*ySize / 4; i+=2)
-	{
-		temp = ((short)U_buff[i] << 8) + U_buff[i + 1];
-		histogram[temp + 32768]++;
-
-		temp = ((short)V_buff[i] << 8) + V_buff[i + 1];
-		histogram[temp + 32768]++;
-	}
-
-	int non_zero_cnt = 0;
-	for (int i = 0; i < 65536; i++)
-	{
-		if (histogram[i] != 0)
-			non_zero_cnt++;
-	}
-
-	int16_t* data = (int16_t*)malloc(non_zero_cnt * sizeof(int16_t));
-	int_least32_t* freqz = (int_least32_t*)malloc(non_zero_cnt * sizeof(int_least32_t));
-	
-	int j = 0;
-	for (int i = 0; i < 65536; i++)
-	{
-		if (histogram[i] != 0)
-		{
-			data[j] = (int16_t)(i - 32768);
-			freqz[j] = histogram[i];
-			j++;
-		}
-	}
-
-	delete[] histogram;
-
-
-	// Construct Huffman Tree 
-	struct MinHeapNode* root
-		= buildHuffmanTree(data, freqz, non_zero_cnt);
-
-	
-
-	// Print Huffman codes using 
-	// the Huffman tree built above 
-	uint8_t* arr = (uint8_t*)malloc(MAX_TREE_HT * sizeof(uint8_t));
-	if (arr == NULL)
-	{
-		qCritical() << "Memory error" << endl;
-		return false;
-	}
-
-	uint8_t** codes = (uint8_t**)malloc(65536 * sizeof(uint8_t*));
-	if (codes == NULL)
-	{
-		qCritical() << "Memory error" << endl;
-		return false;
-	}
-
-	int16_t* code_len = (int16_t*)malloc(65536 * sizeof(int16_t));
-	if (code_len == NULL)
-	{
-		qCritical() << "Memory error" << endl;
-		return false;
-	}
-
-	calculateCodes(root, arr, 0, codes, code_len);
-
-	ushort ret_val = 0;
-	getDictSize(root, &ret_val);
-
-	writeShort(ret_val); //dictionary size
-	writeDict(outputFile, root);
-	
-	struct BitWritter bw = {&outputFile, 0, 0 };
-	for (auto it = v.begin(); it != v.end(); it++)
-	{
-		for (int i = 0; i < code_len[*it + 32768]; i++)
-			writeBit(&bw, codes[*it + 32768][i]);
-	}
-
-	
-	for (int j = 0; j < xSize*ySize/4; j+=2)
-	{
-		temp = ((short)U_buff[j] << 8) + U_buff[j + 1];
-		for (int i = 0; i < code_len[temp + 32768]; i++)
-			writeBit(&bw, codes[temp + 32768][i]);
-	}
-
-	for (int j = 0; j < xSize*ySize / 4; j += 2)
-	{
-		temp = ((short)V_buff[j] << 8) + V_buff[j + 1];
-		for (int i = 0; i < code_len[temp + 32768]; i++)
-			writeBit(&bw, codes[temp + 32768][i]);
-	}
-
-	
-	flushBitWritter(&bw);
-
-	delete[] data;
-	delete[] freqz;
+	//writing in huffman code format
+	bool ret_val = doHuffmanEncoding(outputFile, v, U_buff, V_buff, xSize, ySize);
+	if (ret_val)
+		qCritical() << "Huffman encoding completed successfully" << endl;
+	else
+		qCritical() << "Error in HuffmanEncoding" << endl;
 
 	delete[] Y_buff;
 	delete[] U_buff;
 	delete[] V_buff;
 
-	return true;
+	return ret_val;
 }

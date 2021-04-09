@@ -32,7 +32,7 @@ private:
 
 	void GenerateDCTmatrix(double* DCTKernel, int order);
 	void DCT(const uchar input[], short output[], int N, double* DCTKernel); 
-	void performDCT(uchar input[], short* output, int xSize, int ySize, int N, uchar* input2, int xSize2, int ySize2);
+	void doOnDCTCompression(uchar input[], short* output, int xSize, int ySize, int N, uchar* input2, int xSize2, int ySize2);
 
 	void extendBorders(uchar* input, int xSize, int ySize, int N, uchar** p_output, int* newXSize, int* newYSize);
 	void cropImage(short* input, int xSize, int ySize, short* output, int newXSize, int newYSize);

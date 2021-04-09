@@ -28,14 +28,6 @@ struct HuffmanpNode* readDict(QFile& in, ushort dict_size, ushort* bytes_read)
 {
 	uint8_t byte;
 
-	/*
-	if(fread(&byte, 1, 1, in) == 0)
-	{
-		return NULL;
-	}
-	*/
-
-	//qCritical() << *bytes_read;
 	if (*bytes_read == dict_size)
 		return NULL;
 	else
@@ -55,7 +47,6 @@ struct HuffmanpNode* readDict(QFile& in, ushort dict_size, ushort* bytes_read)
 
 	if (byte == 2)
 	{
-		//fread(&node->data, 2, 1, in);
 		in.getChar(((char*)&node->data) + 1);
 		in.getChar((char*)&node->data);
 		(*bytes_read) += 2;
@@ -71,7 +62,6 @@ struct HuffmanpNode* readDict(QFile& in, ushort dict_size, ushort* bytes_read)
 		
 		node->left = readDict(in, dict_size, bytes_read);
 
-		//if (fread(&byte, 1, 1, in) == 0)
 		if (*bytes_read == dict_size)
 		{
 			return node;
@@ -167,4 +157,74 @@ void testDictrionary(struct HuffmanpNode* root)
 	free(arr);
 	free(codes);
 	free(code_len);
+}
+
+bool decodeHuffmanData(QFile& inputFile, std::vector<short>& v, char* U_buff, char* V_buff, int xSize, int ySize)
+{
+	qCritical() << "HuffmanDecoding:";
+
+	ushort dict_size;
+	if (inputFile.getChar(((char*)&dict_size) + 1) == false)
+		return false;
+	if (inputFile.getChar((char*)&dict_size) == false)
+		return false;
+	qCritical() << "	Dictionary size:" << dict_size;
+
+	qCritical() << "	Reading dictionary...";
+	ushort bytes_read = 0;
+	struct HuffmanpNode* root = readDict(inputFile, dict_size, &bytes_read);
+
+	struct BitReader br = { inputFile, 0, 0 };
+
+	uint8_t bit = readBit(&br);
+
+	qCritical() << "	Decoding data...";
+	std::vector<short> vReader;
+	struct HuffmanpNode* curr = root;
+	while (bit != 0xFF)
+	{
+		if (bit == 0)
+			curr = curr->left;
+		else
+			curr = curr->right;
+
+		// reached leaf node 
+		if (isLeaf(curr))
+		{
+			vReader.push_back(curr->data);
+
+			curr = root;
+		}
+
+		bit = readBit(&br);
+	}
+
+	qCritical() << "	Reading Y component...";
+	int i = 0;
+	v.push_back(vReader[i]);
+	v.push_back(vReader[i + 1]);
+	while (vReader[i] != 0 || vReader[i + 1] != 0) //eob 
+	{
+		i += 2;
+		v.push_back(vReader[i]);
+		v.push_back(vReader[i + 1]);
+	}
+	i += 2;
+
+	qCritical() << "	Reading U component...";
+	int j = 0;
+	for (j = 0; j < xSize * ySize / 4; j += 2)
+	{
+		U_buff[j] = vReader[i] >> 8;
+		U_buff[j + 1] = (char)vReader[i++];
+	}
+
+	qCritical() << "	Reading V component...";
+	for (j = 0; j < xSize * ySize / 4; j += 2)
+	{
+		V_buff[j] = vReader[i] >> 8;
+		V_buff[j + 1] = (char)vReader[i++];
+	}
+
+	return true;
 }
