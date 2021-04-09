@@ -1,5 +1,6 @@
 #pragma once
 #include "BitStreamReader.h"
+#include "HuffmanDec.h"
 #include "QString"
 #include "QDebug"
 
@@ -350,6 +351,45 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 
 	//qCritical() << xSize << " " << ySize << endl;
 
+	ushort dict_size = readShort();
+	qCritical() << dict_size << endl;
+	ushort bytes_read = 0;
+
+	struct HuffmanpNode* root = readDict(inputFile, dict_size, &bytes_read);
+
+	qCritical() << bytes_read << endl;
+
+	struct BitReader br = { inputFile, 0, 0 };
+
+	uint8_t bit = readBit(&br);
+
+	uint32_t data_size = xSize * ySize;
+	std::vector<short> vReader;
+	struct HuffmanpNode* curr = root;
+	while (bit != 0xFF)
+	{
+		if (bit == 0)
+			curr = curr->left;
+		else
+			curr = curr->right;
+
+		// reached leaf node 
+		if (isLeaf(curr))
+		{
+			//fwrite(&curr->data, 2, 1, output);
+			vReader.push_back(curr->data);
+			//qCritical() << curr->data;
+			curr = root;
+			/*
+			data_size -= 2;
+			if (data_size == 0)
+				break;
+			*/
+		}
+
+		bit = readBit(&br);
+	}
+
 	// Create output image buffer
 	output = new uchar[xSize*ySize*3];
 	uchar* Y_buff = new uchar[xSize*ySize];
@@ -372,11 +412,12 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 	}
 	*/
 
+	/*
 	int i = 0;
 	std::vector<short> v;
 	v.push_back(readShort());
 	v.push_back(readShort());
-	while (v[i] != 0 || v[i + 1] != 0)
+	while (v[i] != 0 || v[i + 1] != 0) //eob
 	{
 		v.push_back(readShort());
 		v.push_back(readShort());
@@ -384,8 +425,36 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 
 		//qCritical() << v[i] << ", " << v[i + 1];
 	}
-
+	*/
+	int i = 0;
+	std::vector<short> v;
+	v.push_back(vReader[i]);
+	v.push_back(vReader[i + 1]);
+	while (vReader[i] != 0 || vReader[i + 1] != 0) //eob //proveri da li ce ovo sigurno da se zapise
+	{
+		i += 2;
+		v.push_back(vReader[i]);
+		v.push_back(vReader[i + 1]);
+	}
+	i += 2;
 	zeroRunLengthDecode(v, short_buff, xSize2, ySize2);
+
+	int j = 0;
+	for (j = 0; j < xSize * ySize / 4; j += 2)
+	{
+		U_buff[j] = vReader[i] >> 8;
+		U_buff[j+ 1] = (char)vReader[i++];
+	}
+
+	for (j = 0; j < xSize * ySize / 4; j += 2)
+	{
+		V_buff[j] = vReader[i] >> 8;
+		V_buff[j + 1] = (char)vReader[i++];
+	}
+
+	
+	
+	
 
 	/*
 	// if number of bytes does bit differs from expected, report an error
@@ -396,6 +465,7 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 	}
 	*/
 
+	/*
 	bytesCount = readData(U_buff, xSize*ySize/4);
 	// if number of bytes does bit differs from expected, report an error
 	if (bytesCount != (xSize * ySize)/4)
@@ -411,7 +481,7 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 		qCritical() << "ERROR: Reached EOF before reading entire image.";
 		return false;
 	}
-
+	*/
 
 	performIDCT(Y_buff, short_buff, xSize, ySize, 8, input2, xSize2, ySize2);
 	YUV420toRGB(Y_buff, (char*)U_buff, (char*)V_buff, xSize, ySize, output);

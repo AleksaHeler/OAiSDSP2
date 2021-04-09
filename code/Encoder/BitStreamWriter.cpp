@@ -1,5 +1,6 @@
 #pragma once
 #include "BitStreamWriter.h"
+#include "MinHeapFunctions.h"
 
 #define PI 3.14159265359
 
@@ -383,12 +384,14 @@ bool BitStreamWriter::encode(uchar input[], int xSize, int ySize)
 	std::vector<short> v;
 	zeroRunLengthEncode(output, &v, xSize2, ySize2); //pazi da se poziva xSize2, ySize2
 
+	/*
 	for (int i = 0; i<v.size(); i++)
 	{
 		writeShort((ushort)v[i]);
 		//qCritical() << v[i] << ", " << v[i + 1];
 	}
 
+	
 	int size = writeData(U_buff, xSize*ySize / 4);
 	if (size != xSize * ySize / 4)
 		return false;
@@ -396,7 +399,125 @@ bool BitStreamWriter::encode(uchar input[], int xSize, int ySize)
 	size = writeData(V_buff, xSize*ySize / 4); 
 	if (size != xSize * ySize / 4)
 		return false;
+	*/
 
+
+	//huffman encoding
+	int_least32_t* histogram = (int_least32_t*)malloc(sizeof(int_least32_t) * 65536);
+	if (histogram == NULL)
+	{
+		qCritical() << "Memory error" << endl;
+		return false;
+	}
+
+	for (int i = 0; i < 65536; i++)
+		histogram[i] = 0;
+
+	for (auto it = v.begin(); it != v.end(); it++)
+	{
+		histogram[*it + 32768]++;
+	}
+
+	short temp;
+	for (int i = 0; i < xSize*ySize / 4; i+=2)
+	{
+		temp = ((short)U_buff[i] << 8) + U_buff[i + 1];
+		histogram[temp + 32768]++;
+
+		temp = ((short)V_buff[i] << 8) + V_buff[i + 1];
+		histogram[temp + 32768]++;
+	}
+
+	int non_zero_cnt = 0;
+	for (int i = 0; i < 65536; i++)
+	{
+		if (histogram[i] != 0)
+			non_zero_cnt++;
+	}
+
+	int16_t* data = (int16_t*)malloc(non_zero_cnt * sizeof(int16_t));
+	int_least32_t* freqz = (int_least32_t*)malloc(non_zero_cnt * sizeof(int_least32_t));
+	
+	int j = 0;
+	for (int i = 0; i < 65536; i++)
+	{
+		if (histogram[i] != 0)
+		{
+			data[j] = (int16_t)(i - 32768);
+			freqz[j] = histogram[i];
+			j++;
+		}
+	}
+
+	delete[] histogram;
+
+
+	// Construct Huffman Tree 
+	struct MinHeapNode* root
+		= buildHuffmanTree(data, freqz, non_zero_cnt);
+
+	
+
+	// Print Huffman codes using 
+	// the Huffman tree built above 
+	uint8_t* arr = (uint8_t*)malloc(MAX_TREE_HT * sizeof(uint8_t));
+	if (arr == NULL)
+	{
+		qCritical() << "Memory error" << endl;
+		return false;
+	}
+
+	uint8_t** codes = (uint8_t**)malloc(65536 * sizeof(uint8_t*));
+	if (codes == NULL)
+	{
+		qCritical() << "Memory error" << endl;
+		return false;
+	}
+
+	int16_t* code_len = (int16_t*)malloc(65536 * sizeof(int16_t));
+	if (code_len == NULL)
+	{
+		qCritical() << "Memory error" << endl;
+		return false;
+	}
+
+	calculateCodes(root, arr, 0, codes, code_len);
+
+	ushort ret_val = 0;
+	getDictSize(root, &ret_val);
+
+	qCritical() << "Dict size: " << ret_val << " bytes (" << ret_val / 1024.0 << " kb)";
+
+	writeShort(ret_val); //dictionary size
+	writeDict(outputFile, root);
+	
+	struct BitWritter bw = {&outputFile, 0, 0 };
+	for (auto it = v.begin(); it != v.end(); it++)
+	{
+		for (int i = 0; i < code_len[*it + 32768]; i++)
+			writeBit(&bw, codes[*it + 32768][i]);
+	}
+
+	
+	for (int j = 0; j < xSize*ySize/4; j+=2)
+	{
+		temp = ((short)U_buff[j] << 8) + U_buff[j + 1];
+		for (int i = 0; i < code_len[temp + 32768]; i++)
+			writeBit(&bw, codes[temp + 32768][i]);
+	}
+
+	for (int j = 0; j < xSize*ySize / 4; j += 2)
+	{
+		temp = ((short)V_buff[j] << 8) + V_buff[j + 1];
+		for (int i = 0; i < code_len[temp + 32768]; i++)
+			writeBit(&bw, codes[temp + 32768][i]);
+	}
+
+	
+	flushBitWritter(&bw);
+
+	delete[] data;
+	delete[] freqz;
 
 	delete[] Y_buff;
 	delete[] U_buff;
