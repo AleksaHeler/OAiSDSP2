@@ -349,15 +349,10 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 	// Get image size
 	readImageInfo(xSize, ySize);
 
-	//qCritical() << xSize << " " << ySize << endl;
-
 	ushort dict_size = readShort();
-	qCritical() << dict_size << endl;
 	ushort bytes_read = 0;
 
 	struct HuffmanpNode* root = readDict(inputFile, dict_size, &bytes_read);
-
-	qCritical() << bytes_read << endl;
 
 	struct BitReader br = { inputFile, 0, 0 };
 
@@ -376,9 +371,8 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 		// reached leaf node 
 		if (isLeaf(curr))
 		{
-			//fwrite(&curr->data, 2, 1, output);
 			vReader.push_back(curr->data);
-			//qCritical() << curr->data;
+	
 			curr = root;
 			/*
 			data_size -= 2;
@@ -401,31 +395,8 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 	uchar* input2;
 	extendBorders(Y_buff, xSize, ySize, 8, &input2, &xSize2, &ySize2);
 
-
-	int bytesCount = 0;
 	short* short_buff = new short[xSize2 * ySize2];
-	/*
-	for (int i = 0; i < xSize2* ySize2; i++)
-	{
-		short_buff[i] = readShort();
-		bytesCount++;
-	}
-	*/
 
-	/*
-	int i = 0;
-	std::vector<short> v;
-	v.push_back(readShort());
-	v.push_back(readShort());
-	while (v[i] != 0 || v[i + 1] != 0) //eob
-	{
-		v.push_back(readShort());
-		v.push_back(readShort());
-		i += 2;
-
-		//qCritical() << v[i] << ", " << v[i + 1];
-	}
-	*/
 	int i = 0;
 	std::vector<short> v;
 	v.push_back(vReader[i]);
@@ -452,36 +423,7 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 		V_buff[j + 1] = (char)vReader[i++];
 	}
 
-	
-	
-	
 
-	/*
-	// if number of bytes does bit differs from expected, report an error
-	if (bytesCount != (xSize2 * ySize2))
-	{
-		qCritical() << "ERROR: Reached EOF before reading entire image.";
-		return false;
-	}
-	*/
-
-	/*
-	bytesCount = readData(U_buff, xSize*ySize/4);
-	// if number of bytes does bit differs from expected, report an error
-	if (bytesCount != (xSize * ySize)/4)
-	{
-		qCritical() << "ERROR: Reached EOF before reading entire image.";
-		return false;
-	}
-
-	bytesCount = readData(V_buff, xSize*ySize/4);
-	// if number of bytes does bit differs from expected, report an error
-	if (bytesCount != (xSize * ySize)/4)
-	{
-		qCritical() << "ERROR: Reached EOF before reading entire image.";
-		return false;
-	}
-	*/
 
 	performIDCT(Y_buff, short_buff, xSize, ySize, 8, input2, xSize2, ySize2);
 	YUV420toRGB(Y_buff, (char*)U_buff, (char*)V_buff, xSize, ySize, output);

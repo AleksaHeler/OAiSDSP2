@@ -384,23 +384,6 @@ bool BitStreamWriter::encode(uchar input[], int xSize, int ySize)
 	std::vector<short> v;
 	zeroRunLengthEncode(output, &v, xSize2, ySize2); //pazi da se poziva xSize2, ySize2
 
-	/*
-	for (int i = 0; i<v.size(); i++)
-	{
-		writeShort((ushort)v[i]);
-		//qCritical() << v[i] << ", " << v[i + 1];
-	}
-
-	
-	int size = writeData(U_buff, xSize*ySize / 4);
-	if (size != xSize * ySize / 4)
-		return false;
-
-	size = writeData(V_buff, xSize*ySize / 4); 
-	if (size != xSize * ySize / 4)
-		return false;
-	*/
-
 
 	//huffman encoding
 	int_least32_t* histogram = (int_least32_t*)malloc(sizeof(int_least32_t) * 65536);
@@ -485,8 +468,6 @@ bool BitStreamWriter::encode(uchar input[], int xSize, int ySize)
 
 	ushort ret_val = 0;
 	getDictSize(root, &ret_val);
-
-	qCritical() << "Dict size: " << ret_val << " bytes (" << ret_val / 1024.0 << " kb)";
 
 	writeShort(ret_val); //dictionary size
 	writeDict(outputFile, root);
