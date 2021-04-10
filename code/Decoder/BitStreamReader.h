@@ -48,11 +48,12 @@ private:
 	void extendBorders(char* input, int xSize, int ySize, int N, char** p_output, int* newXSize, int* newYSize);
 	void cropImage(char* input, int xSize, int ySize, char* output, int newXSize, int newYSize);
 
-	void performInverseDCTQuantization(short* dctCoeffs);
+	void performInverseDCTQuantization(short* dctCoeffs, int quantizationMatrix);
 
 	void zeroRunLengthDecode(std::vector<short>& v, short* output, int xSize, int ySize);
 
-	static uchar quantizationMatrix[64];
+	static uchar LuminanceQuantizationMatrix[64];
+	static uchar ChrominanceQuantizationMatrix[64];
 
 
 public:

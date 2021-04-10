@@ -44,14 +44,18 @@ private:
 	void extendBorders(char* input, int xSize, int ySize, int N, char** p_output, int* newXSize, int* newYSize);
 
 
-	void performDCTQuantization(short* dctCoeffs);
+	void performDCTQuantization(short* dctCoeffs, int matrix);
 
 	void doZigZag(short block[], int N, int B); 
 
 	void zeroRunLengthEncode(short* block, std::vector<short>* v, int xSize, int ySize);
 
 	/* 8x8 Quantization matrix */
-	static uchar quantizationMatrix[64];
+	static uchar LuminanceQuantizationMatrix[64];
+	static uchar ChrominanceQuantizationMatrix[64];
+
+	
+
 
 public:
 	// initialize writer

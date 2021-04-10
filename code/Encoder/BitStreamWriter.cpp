@@ -60,7 +60,7 @@ int BitStreamWriter::writeData(char data[], int size)
 
 
 /* 8x8 Quantization matrix */
-uchar BitStreamWriter::quantizationMatrix[64] =
+uchar BitStreamWriter::LuminanceQuantizationMatrix[64] =
 {
 	2, 2, 2, 2, 3, 5, 7, 8,
 	2, 2, 2, 3, 4, 8, 8, 7,
@@ -72,6 +72,17 @@ uchar BitStreamWriter::quantizationMatrix[64] =
 	9, 12, 12, 13, 29, 13, 13, 13
 };
 
+uchar BitStreamWriter::ChrominanceQuantizationMatrix[64] =
+{
+	3, 3, 5, 6, 25, 25, 25, 25,
+	3, 3, 4, 9, 25, 25, 25, 25,
+	3, 4, 7, 25, 25, 25, 25, 25,
+	6, 9, 25, 25, 25, 25, 25, 25,
+	25, 25, 25, 25, 25, 25, 25, 25,
+	25, 25, 25, 25, 25, 25, 25, 25,
+	25, 25, 25, 25, 25, 25, 25, 25,
+	25, 25, 25, 25, 25, 25, 25, 25
+};
 
 void BitStreamWriter::RGBtoYUV420(const uchar rgbImg[], int x, int y, uchar Y_buff[], char U_buff[], char V_buff[])
 {
@@ -254,9 +265,9 @@ void BitStreamWriter::doOnDCTCompression(short* output, int xSize, int ySize, in
 			/* Invoke DCT */
 			DCT(inBlock, dctCoeffs, N, DCTKernel);
 
-			performDCTQuantization(dctCoeffs);
+			performDCTQuantization(dctCoeffs, 0); //luminance quantization table
 
-			doZigZag(dctCoeffs, 8, 8*8 * 0.5);
+			doZigZag(dctCoeffs, 8, 8*8 * 0.7);
 
 			
 			for (int i = 0; i < 64; i++)
@@ -303,9 +314,9 @@ void BitStreamWriter::doOnDCTCompression(short* output, int xSize, int ySize, in
 			/* Invoke DCT */
 			DCT(inBlock, dctCoeffs, N, DCTKernel);
 
-			//performDCTQuantization(dctCoeffs);
+			performDCTQuantization(dctCoeffs, 1); //chrominance quantization table
 
-			doZigZag(dctCoeffs, 8, 8 * 8 * 0.5);
+			doZigZag(dctCoeffs, 8, 8 * 8 * 0.85);
 
 
 			for (int i = 0; i < 64; i++)
@@ -386,14 +397,20 @@ void BitStreamWriter::cropImage(short* input, int xSize, int ySize, short* outpu
 	}
 }
 
-void BitStreamWriter::performDCTQuantization(short* dctCoeffs)
+void BitStreamWriter::performDCTQuantization(short* dctCoeffs, int quantizationMatrix)
 {
+	uchar* matrix;
+	if (quantizationMatrix == 0)
+		matrix = LuminanceQuantizationMatrix;
+	else
+		matrix = ChrominanceQuantizationMatrix;
+
 	const int N = 8;
 	for (int j = 0; j<N; j++)
 	{
 		for (int i = 0; i<N; i++)
 		{
-			dctCoeffs[j*N + i] = floor(dctCoeffs[j*N + i] / (quantizationMatrix[j*N + i]) + 0.5);
+			dctCoeffs[j*N + i] = floor(dctCoeffs[j*N + i] / (matrix[j*N + i]) + 0.5);
 		}
 	}
 }

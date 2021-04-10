@@ -143,7 +143,7 @@ void BitStreamReader::YUV420toRGB(const uchar Y_buff[], const char U_buff[], con
 	}
 }
 
-uchar BitStreamReader::quantizationMatrix[64] =
+uchar BitStreamReader::LuminanceQuantizationMatrix[64] =
 {
 	2, 2, 2, 2, 3, 5, 7, 8,
 	2, 2, 2, 3, 4, 8, 8, 7,
@@ -154,6 +154,19 @@ uchar BitStreamReader::quantizationMatrix[64] =
 	7, 8, 10, 11, 13, 16, 15, 13,
 	9, 12, 12, 13, 29, 13, 13, 13
 };
+
+uchar BitStreamReader::ChrominanceQuantizationMatrix[64] =
+{
+	3, 3, 5, 6, 13, 13, 13, 13,
+	3, 3, 4, 9, 13, 13, 13, 13,
+	3, 4, 7, 13, 13, 13, 13, 13,
+	6, 9, 13, 13, 13, 13, 13, 13,
+	13, 13, 13, 13, 13, 13, 13, 13,
+	13, 13, 13, 13, 13, 13, 13, 13,
+	13, 13, 13, 13, 13, 13, 13, 13,
+	13, 13, 13, 13, 13, 13, 13, 13
+};
+
 
 void BitStreamReader::GenerateDCTmatrix(double* DCTKernel, int order)
 {
@@ -279,7 +292,7 @@ void BitStreamReader::doIDCTDecompression(uchar input[], short* short_buff,  int
 		for (int x = 0; x < xSize2 / N; x++)
 		{
 
-			performInverseDCTQuantization(&short_buff[64 * cnt]);
+			performInverseDCTQuantization(&short_buff[64 * cnt], 0);
 
 			IDCT(&short_buff[64*cnt], inBlock, N, DCTKernel);
 
@@ -318,7 +331,7 @@ void BitStreamReader::doIDCTDecompression(char input[], short* short_buff, int x
 		for (int x = 0; x < xSize2 / N; x++)
 		{
 
-			//performInverseDCTQuantization(&short_buff[64 * cnt]);
+			performInverseDCTQuantization(&short_buff[64 * cnt], 1);
 
 			IDCT(&short_buff[64 * cnt], inBlock, N, DCTKernel);
 
@@ -342,14 +355,20 @@ void BitStreamReader::doIDCTDecompression(char input[], short* short_buff, int x
 	delete[] DCTKernel;
 }
 
-void BitStreamReader::performInverseDCTQuantization(short* dctCoeffs)
+void BitStreamReader::performInverseDCTQuantization(short* dctCoeffs, int quantizationMatrix)
 {
+	uchar* matrix;
+	if (quantizationMatrix == 0)
+		matrix = LuminanceQuantizationMatrix;
+	else
+		matrix = ChrominanceQuantizationMatrix;
+
 	const int N = 8;
 	for (int j = 0; j<N; j++)
 	{
 		for (int i = 0; i<N; i++)
 		{
-			dctCoeffs[j*N + i] = floor(dctCoeffs[j*N + i] * (quantizationMatrix[j*N + i]));
+			dctCoeffs[j*N + i] = floor(dctCoeffs[j*N + i] * (matrix[j*N + i]));
 		}
 	}
 }
