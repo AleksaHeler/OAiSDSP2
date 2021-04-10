@@ -220,6 +220,50 @@ void BitStreamReader::IDCT(const short input[], uchar output[], int N, double* D
 	return;
 }
 
+void BitStreamReader::IDCT(const short input[], char output[], int N, double* DCTKernel)
+{
+	double* temp = new double[N*N];
+	double* DCTCoefficients = new double[N*N];
+
+	double sum;
+	for (int i = 0; i <= N - 1; i++)
+	{
+		for (int j = 0; j <= N - 1; j++)
+		{
+			sum = 0;
+			for (int k = 0; k <= N - 1; k++)
+			{
+				sum = sum + DCTKernel[k*N + i] * (input[k*N + j]);
+			}
+			temp[i*N + j] = sum;
+		}
+	}
+
+	for (int i = 0; i <= N - 1; i++)
+	{
+		for (int j = 0; j <= N - 1; j++)
+		{
+			sum = 0;
+			for (int k = 0; k <= N - 1; k++)
+			{
+				sum = sum + temp[i*N + k] * DCTKernel[k*N + j];
+			}
+			DCTCoefficients[i*N + j] = sum;
+		}
+	}
+
+	for (int i = 0; i < N*N; i++)
+	{
+		double x = floor(DCTCoefficients[i] + 0.5);
+		output[i] = x;
+	}
+
+	delete[] temp;
+	delete[] DCTCoefficients;
+
+	return;
+}
+
 void BitStreamReader::doIDCTDecompression(uchar input[], short* short_buff,  int xSize, int ySize, int N, uchar* input2, int xSize2, int ySize2)
 {
 	/* Create NxN buffer for one input block */
@@ -259,6 +303,45 @@ void BitStreamReader::doIDCTDecompression(uchar input[], short* short_buff,  int
 	delete[] DCTKernel;
 }
 
+void BitStreamReader::doIDCTDecompression(char input[], short* short_buff, int xSize, int ySize, int N, char* input2, int xSize2, int ySize2)
+{
+	/* Create NxN buffer for one input block */
+	char* inBlock = new char[N*N];
+
+	/* Generate DCT kernel */
+	double* DCTKernel = new double[N*N];
+	GenerateDCTmatrix(DCTKernel, N);
+
+	int cnt = 0;
+	for (int y = 0; y < ySize2 / N; y++)
+	{
+		for (int x = 0; x < xSize2 / N; x++)
+		{
+
+			//performInverseDCTQuantization(&short_buff[64 * cnt]);
+
+			IDCT(&short_buff[64 * cnt], inBlock, N, DCTKernel);
+
+			/* Write output values to output image */
+			for (int j = 0; j<N; j++)
+			{
+				for (int i = 0; i<N; i++)
+				{
+					input2[(N*y + j)*(xSize2)+N*x + i] = inBlock[j*N + i];
+				}
+			}
+
+			cnt++;
+		}
+	}
+
+	cropImage(input2, xSize2, ySize2, input, xSize, ySize);
+
+	/* Delete used memory buffers coefficients */
+	delete[] inBlock;
+	delete[] DCTKernel;
+}
+
 void BitStreamReader::performInverseDCTQuantization(short* dctCoeffs)
 {
 	const int N = 8;
@@ -266,7 +349,7 @@ void BitStreamReader::performInverseDCTQuantization(short* dctCoeffs)
 	{
 		for (int i = 0; i<N; i++)
 		{
-			dctCoeffs[j*N + i] = floor(dctCoeffs[j*N + i] * (quantizationMatrix[j*N + i])  );
+			dctCoeffs[j*N + i] = floor(dctCoeffs[j*N + i] * (quantizationMatrix[j*N + i]));
 		}
 	}
 }
@@ -293,7 +376,6 @@ void BitStreamReader::zeroRunLengthDecode(std::vector<short>& v, short* output, 
 		output[k] = 0;
 	}
 }
-
 
 
 void BitStreamReader::extendBorders(uchar* input, int xSize, int ySize, int N, uchar** p_output, int* newXSize, int* newYSize)
@@ -323,7 +405,42 @@ void BitStreamReader::extendBorders(uchar* input, int xSize, int ySize, int N, u
 	*p_output = output;
 }
 
+void BitStreamReader::extendBorders(char* input, int xSize, int ySize, int N, char** p_output, int* newXSize, int* newYSize)
+{
+	int deltaX = N - xSize%N;
+	int deltaY = N - ySize%N;
+
+	*newXSize = xSize + deltaX;
+	*newYSize = ySize + deltaY;
+
+	char* output = new char[(xSize + deltaX)*(ySize + deltaY)];
+
+	for (int i = 0; i<ySize; i++)
+	{
+		memcpy(&output[i*(xSize + deltaX)], &input[i*(xSize)], xSize);
+		if (deltaX != 0)
+		{
+			memset(&output[i*(xSize + deltaX) + xSize], output[i*(xSize + deltaX) + xSize - 1], deltaX);
+		}
+	}
+
+	for (int i = 0; i<deltaY; i++)
+	{
+		memcpy(&output[(i + ySize)*(xSize + deltaX)], &output[(ySize)*(xSize + deltaX)], xSize + deltaX);
+	}
+
+	*p_output = output;
+}
+
 void BitStreamReader::cropImage(uchar* input, int xSize, int ySize, uchar* output, int newXSize, int newYSize)
+{
+	for (int i = 0; i<newYSize; i++)
+	{
+		memcpy(&output[i*(newXSize)], &input[i*(xSize)], newXSize);
+	}
+}
+
+void BitStreamReader::cropImage(char* input, int xSize, int ySize, char* output, int newXSize, int newYSize)
 {
 	for (int i = 0; i<newYSize; i++)
 	{
@@ -361,9 +478,19 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 	extendBorders(Y_buff, xSize, ySize, 8, &input2, &xSize2, &ySize2);
 	short* dct_coeffs = new short[xSize2 * ySize2];
 
+	int xSize3, ySize3;
+	int xSize4, ySize4;
+	char* input3;
+	char* input4;
+	extendBorders(U_buff, (int)(xSize/2), (int)(ySize/2), 8, &input3, &xSize3, &ySize3);
+	extendBorders(V_buff, (int)(xSize/2), (int)(ySize/2), 8, &input4, &xSize4, &ySize4);
+	short* dct_coeffs2 = new short[xSize3 * ySize3];
+	short* dct_coeffs3 = new short[xSize4 * ySize4];
+
+
 	//decoding huffman data
-	std::vector<short> v;
-	bool ret_val = decodeHuffmanData(inputFile, v, U_buff, V_buff, xSize, ySize);
+	std::vector<short> v_Y, v_U, v_V;
+	bool ret_val = decodeHuffmanData(inputFile, v_Y, v_U, v_V);
 	if (ret_val == false)
 	{
 		qCritical() << "Error in Huffman decoding" << endl;
@@ -372,10 +499,16 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 	else
 		qCritical() << "Huffman decoding completed successfully" << endl;
 
-	zeroRunLengthDecode(v, dct_coeffs, xSize2, ySize2);
+
+	zeroRunLengthDecode(v_Y, dct_coeffs, xSize2, ySize2);
+	zeroRunLengthDecode(v_U, dct_coeffs2, xSize3, ySize3);
+	zeroRunLengthDecode(v_V, dct_coeffs3, xSize4, ySize4);
 
 	doIDCTDecompression(Y_buff, dct_coeffs, xSize, ySize, 8, input2, xSize2, ySize2);
-	YUV420toRGB(Y_buff, (char*)U_buff, (char*)V_buff, xSize, ySize, output);
+	doIDCTDecompression(U_buff, dct_coeffs2, (int)(xSize / 2), (int)(ySize / 2), 8, input3, xSize3, ySize3);
+	doIDCTDecompression(V_buff, dct_coeffs3, (int)(xSize / 2), (int)(ySize / 2), 8, input4, xSize4, ySize4);
+
+	YUV420toRGB(Y_buff, U_buff, V_buff, xSize, ySize, output);
 
 cleanup:
 	delete[] Y_buff;

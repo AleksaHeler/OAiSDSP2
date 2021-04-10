@@ -39,8 +39,14 @@ private:
 	void IDCT(const short input[], uchar output[], int N, double* DCTKernel);
 	void doIDCTDecompression(uchar Y_buff[], short* short_buff, int xSize, int ySize, int N, uchar* input2, int xSize2, int ySize2);
 
+	void IDCT(const short input[], char output[], int N, double* DCTKernel);
+	void doIDCTDecompression(char Y_buff[], short* short_buff, int xSize, int ySize, int N, char* input2, int xSize2, int ySize2);
+
 	void extendBorders(uchar* input, int xSize, int ySize, int N, uchar** p_output, int* newXSize, int* newYSize);
 	void cropImage(uchar* input, int xSize, int ySize, uchar* output, int newXSize, int newYSize);
+
+	void extendBorders(char* input, int xSize, int ySize, int N, char** p_output, int* newXSize, int* newYSize);
+	void cropImage(char* input, int xSize, int ySize, char* output, int newXSize, int newYSize);
 
 	void performInverseDCTQuantization(short* dctCoeffs);
 

@@ -301,7 +301,7 @@ void getDictSize(struct MinHeapNode* root, ushort* ret_val) {
 		(*ret_val) += 3;
 }
 
-bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v, char* U_buff, char* V_buff, int xSize, int ySize)
+bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<short> &v_U, std::vector<short> &v_V)
 {
 	qCritical() << "HuffmanEncoding:";
 
@@ -315,20 +315,22 @@ bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v, char* U_buff, c
 	for (int i = 0; i < 65536; i++)
 		histogram[i] = 0;
 
-	for (auto it = v.begin(); it != v.end(); it++)
+	for (auto it = v_Y.begin(); it != v_Y.end(); it++)
 	{
 		histogram[*it + 32768]++;
 	}
 
-	short temp;
-	for (int i = 0; i < xSize*ySize / 4; i += 2)
+	for (auto it = v_U.begin(); it != v_U.end(); it++)
 	{
-		temp = ((short)U_buff[i] << 8) + U_buff[i + 1];
-		histogram[temp + 32768]++;
-
-		temp = ((short)V_buff[i] << 8) + V_buff[i + 1];
-		histogram[temp + 32768]++;
+		histogram[*it + 32768]++;
 	}
+
+	for (auto it = v_V.begin(); it != v_V.end(); it++)
+	{
+		histogram[*it + 32768]++;
+	}
+
+	
 
 	int non_zero_cnt = 0;
 	for (int i = 0; i < 65536; i++)
@@ -401,24 +403,22 @@ bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v, char* U_buff, c
 	qCritical() << "	Writing data in encoded format...";
 	//Y writing
 	struct BitWritter bw = { &outputFile, 0, 0 };
-	for (auto it = v.begin(); it != v.end(); it++)
+	for (auto it = v_Y.begin(); it != v_Y.end(); it++)
 	{
 		for (int i = 0; i < code_len[*it + 32768]; i++)
 			writeBit(&bw, codes[*it + 32768][i]);
 	}
 	//U writing
-	for (int j = 0; j < xSize*ySize / 4; j += 2)
+	for (auto it = v_U.begin(); it != v_U.end(); it++)
 	{
-		temp = ((short)U_buff[j] << 8) + U_buff[j + 1];
-		for (int i = 0; i < code_len[temp + 32768]; i++)
-			writeBit(&bw, codes[temp + 32768][i]);
+		for (int i = 0; i < code_len[*it + 32768]; i++)
+			writeBit(&bw, codes[*it + 32768][i]);
 	}
 	//V writing
-	for (int j = 0; j < xSize*ySize / 4; j += 2)
+	for (auto it = v_V.begin(); it != v_V.end(); it++)
 	{
-		temp = ((short)V_buff[j] << 8) + V_buff[j + 1];
-		for (int i = 0; i < code_len[temp + 32768]; i++)
-			writeBit(&bw, codes[temp + 32768][i]);
+		for (int i = 0; i < code_len[*it + 32768]; i++)
+			writeBit(&bw, codes[*it + 32768][i]);
 	}
 
 	flushBitWritter(&bw);

@@ -159,7 +159,7 @@ void testDictrionary(struct HuffmanpNode* root)
 	free(code_len);
 }
 
-bool decodeHuffmanData(QFile& inputFile, std::vector<short>& v, char* U_buff, char* V_buff, int xSize, int ySize)
+bool decodeHuffmanData(QFile& inputFile, std::vector<short>& v_Y, std::vector<short>& v_U, std::vector<short>& v_V)
 {
 	qCritical() << "HuffmanDecoding:";
 
@@ -201,30 +201,37 @@ bool decodeHuffmanData(QFile& inputFile, std::vector<short>& v, char* U_buff, ch
 
 	qCritical() << "	Reading Y component...";
 	int i = 0;
-	v.push_back(vReader[i]);
-	v.push_back(vReader[i + 1]);
+	v_Y.push_back(vReader[i]);
+	v_Y.push_back(vReader[i + 1]);
 	while (vReader[i] != 0 || vReader[i + 1] != 0) //eob 
 	{
 		i += 2;
-		v.push_back(vReader[i]);
-		v.push_back(vReader[i + 1]);
+		v_Y.push_back(vReader[i]);
+		v_Y.push_back(vReader[i + 1]);
 	}
 	i += 2;
 
 	qCritical() << "	Reading U component...";
-	int j = 0;
-	for (j = 0; j < xSize * ySize / 4; j += 2)
+	v_U.push_back(vReader[i]);
+	v_U.push_back(vReader[i + 1]);
+	while (vReader[i] != 0 || vReader[i + 1] != 0) //eob 
 	{
-		U_buff[j] = vReader[i] >> 8;
-		U_buff[j + 1] = (char)vReader[i++];
+		i += 2;
+		v_U.push_back(vReader[i]);
+		v_U.push_back(vReader[i + 1]);
 	}
+	i += 2;
 
 	qCritical() << "	Reading V component...";
-	for (j = 0; j < xSize * ySize / 4; j += 2)
+	v_V.push_back(vReader[i]);
+	v_V.push_back(vReader[i + 1]);
+	while (vReader[i] != 0 || vReader[i + 1] != 0) //eob 
 	{
-		V_buff[j] = vReader[i] >> 8;
-		V_buff[j + 1] = (char)vReader[i++];
+		i += 2;
+		v_V.push_back(vReader[i]);
+		v_V.push_back(vReader[i + 1]);
 	}
+	i += 2;
 
 	return true;
 }

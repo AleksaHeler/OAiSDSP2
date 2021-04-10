@@ -46,4 +46,4 @@ void writeDict(QFile& out, struct MinHeapNode* root);
 
 void getDictSize(struct MinHeapNode* root, ushort* ret_val);
 
-bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v, char* U_buff, char* V_buff, int xSize, int ySize);
+bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<short> &v_U, std::vector<short> &v_V);
