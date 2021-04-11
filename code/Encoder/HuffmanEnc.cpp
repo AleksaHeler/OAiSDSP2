@@ -49,11 +49,8 @@ struct MinHeap* createMinHeap(int_least32_t  capacity)
 
 // A utility function to 
 // swap two min heap nodes 
-void swapMinHeapNode(struct MinHeapNode** a,
-	struct MinHeapNode** b)
-
+void swapMinHeapNode(struct MinHeapNode** a, struct MinHeapNode** b)
 {
-
 	struct MinHeapNode* t = *a;
 	*a = *b;
 	*b = t;
@@ -61,9 +58,7 @@ void swapMinHeapNode(struct MinHeapNode** a,
 
 // The standard minHeapify function. 
 void minHeapify(struct MinHeap* minHeap, int_least32_t  idx)
-
 {
-
 	int_least32_t  smallest = idx;
 	int_least32_t  left = 2 * idx + 1;
 	int_least32_t  right = 2 * idx + 2;
@@ -87,16 +82,13 @@ void minHeapify(struct MinHeap* minHeap, int_least32_t  idx)
 // if size of heap is 1 or not 
 int isSizeOne(struct MinHeap* minHeap)
 {
-
 	return (minHeap->size == 1);
 }
 
 // A standard function to extract 
 // minimum value node from heap 
 struct MinHeapNode* extractMin(struct MinHeap* minHeap)
-
 {
-
 	struct MinHeapNode* temp = minHeap->array[0];
 	minHeap->array[0]
 		= minHeap->array[minHeap->size - 1];
@@ -109,11 +101,8 @@ struct MinHeapNode* extractMin(struct MinHeap* minHeap)
 
 // A utility function to insert 
 // a new node to Min Heap 
-void insertMinHeap(struct MinHeap* minHeap,
-	struct MinHeapNode* minHeapNode)
-
+void insertMinHeap(struct MinHeap* minHeap, struct MinHeapNode* minHeapNode)
 {
-
 	++minHeap->size;
 	int_least32_t  i = minHeap->size - 1;
 
@@ -128,9 +117,7 @@ void insertMinHeap(struct MinHeap* minHeap,
 
 // A standard function to build min heap 
 void buildMinHeap(struct MinHeap* minHeap)
-
 {
-
 	int_least32_t  n = minHeap->size - 1;
 	int_least32_t  i;
 
@@ -150,9 +137,7 @@ void printArr(uint8_t arr[], int n)
 
 // Utility function to check if this node is leaf 
 int isLeaf(struct MinHeapNode* root)
-
 {
-
 	return !(root->left) && !(root->right);
 }
 
@@ -161,9 +146,7 @@ int isLeaf(struct MinHeapNode* root)
 // data[] in min heap. Initially size of 
 // min heap is equal to capacity 
 struct MinHeap* createAndBuildMinHeap(int16_t data[], int_least32_t  freq[], int_least32_t  size)
-
 {
-
 	struct MinHeap* minHeap = createMinHeap(size);
 
 	for (int_least32_t i = 0; i < size; ++i)
@@ -176,8 +159,6 @@ struct MinHeap* createAndBuildMinHeap(int16_t data[], int_least32_t  freq[], int
 }
 
 
-//encoder.c functions
-
 // The main function that builds Huffman tree 
 struct MinHeapNode* buildHuffmanTree(int16_t data[], int_least32_t  freq[], int_least32_t  size)
 {
@@ -189,8 +170,8 @@ struct MinHeapNode* buildHuffmanTree(int16_t data[], int_least32_t  freq[], int_
 	struct MinHeap* minHeap = createAndBuildMinHeap(data, freq, size);
 
 	// Iterate while size of heap doesn't become 1 
-	while (!isSizeOne(minHeap)) {
-
+	while (!isSizeOne(minHeap)) 
+	{
 		// Step 2: Extract the two minimum 
 		// freq items from min heap 
 		left = extractMin(minHeap);
@@ -218,17 +199,16 @@ struct MinHeapNode* buildHuffmanTree(int16_t data[], int_least32_t  freq[], int_
 
 void calculateCodes(struct MinHeapNode* root, uint8_t  arr[], int_least32_t  top, uint8_t** codes, int16_t* code_len)
 {
-
 	// Assign 0 to left edge and recur 
-	if (root->left) {
-
+	if (root->left) 
+	{
 		arr[top] = 0;
 		calculateCodes(root->left, arr, top + 1, codes, code_len);
 	}
 
 	// Assign 1 to right edge and recur 
-	if (root->right) {
-
+	if (root->right) 
+	{
 		arr[top] = 1;
 		calculateCodes(root->right, arr, top + 1, codes, code_len);
 	}
@@ -237,8 +217,8 @@ void calculateCodes(struct MinHeapNode* root, uint8_t  arr[], int_least32_t  top
 	// it contains one of the input 
 	// characters, print the character 
 	// and its code from arr[] 
-	if (isLeaf(root)) {
-
+	if (isLeaf(root)) 
+	{
 		code_len[root->data + 32768] = top;
 		codes[root->data + 32768] = (uint8_t*)malloc(top * sizeof(uint8_t));
 		if (codes[root->data + 32768] == NULL)
@@ -282,7 +262,8 @@ void writeDict(QFile& out, struct MinHeapNode* root)
 	}
 }
 
-void getDictSize(struct MinHeapNode* root, ushort* ret_val) {
+void getDictSize(struct MinHeapNode* root, ushort* ret_val) 
+{
 	const uint8_t left = 0;
 	const uint8_t right = 1;
 	const uint8_t data = 2;
@@ -303,7 +284,7 @@ void getDictSize(struct MinHeapNode* root, ushort* ret_val) {
 
 bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<short> &v_U, std::vector<short> &v_V)
 {
-	qCritical() << "HuffmanEncoding:";
+	//qCritical() << "HuffmanEncoding:";
 
 	int_least32_t* histogram = (int_least32_t*)malloc(sizeof(int_least32_t) * 65536);
 	if (histogram == NULL)
@@ -330,7 +311,6 @@ bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<s
 		histogram[*it + 32768]++;
 	}
 
-	
 
 	int non_zero_cnt = 0;
 	for (int i = 0; i < 65536; i++)
@@ -342,7 +322,7 @@ bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<s
 	int16_t* data = (int16_t*)malloc(non_zero_cnt * sizeof(int16_t));
 	int_least32_t* freqz = (int_least32_t*)malloc(non_zero_cnt * sizeof(int_least32_t));
 
-	qCritical() << "	Initializing data and frequencies...";
+	//qCritical() << "	Initializing data and frequencies...";
 
 	int j = 0;
 	for (int i = 0; i < 65536; i++)
@@ -358,7 +338,7 @@ bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<s
 	delete[] histogram;
 
 	// Construct Huffman Tree 
-	qCritical() << "	Building Huffman tree...";
+	//qCritical() << "	Building Huffman tree...";
 	struct MinHeapNode* root = buildHuffmanTree(data, freqz, non_zero_cnt);
 
 
@@ -385,10 +365,10 @@ bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<s
 		return false;
 	}
 
-	qCritical() << "	Calculating codes...";
+	//qCritical() << "	Calculating codes...";
 	calculateCodes(root, arr, 0, codes, code_len);
 
-	qCritical() << "	Writing dictionary size...";
+	//qCritical() << "	Writing dictionary size...";
 	ushort dict_size = 0;
 	getDictSize(root, &dict_size);
 	if (outputFile.putChar(*(((uchar*)&dict_size) + 1)) == false)
@@ -397,10 +377,10 @@ bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<s
 	if (outputFile.putChar(*((uchar*)&dict_size)) == false)
 		return false;
 
-	qCritical() << "	Writing dictionary...";
+	//qCritical() << "	Writing dictionary...";
 	writeDict(outputFile, root);
 
-	qCritical() << "	Writing data in encoded format...";
+	//qCritical() << "	Writing data in encoded format...";
 	//Y writing
 	struct BitWritter bw = { &outputFile, 0, 0 };
 	for (auto it = v_Y.begin(); it != v_Y.end(); it++)

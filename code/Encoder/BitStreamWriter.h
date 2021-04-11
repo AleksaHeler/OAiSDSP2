@@ -31,6 +31,7 @@ private:
 	void RGBtoYUV420(const uchar rgbImg[], int x, int y, uchar Y_buff[], char U_buff[], char V_buff[]);
 
 	void GenerateDCTmatrix(double* DCTKernel, int order);
+
 	void DCT(const uchar input[], short output[], int N, double* DCTKernel); 
 	void doOnDCTCompression(short* output, int xSize, int ySize, int N, uchar* input2, int xSize2, int ySize2);
 
@@ -55,8 +56,6 @@ private:
 	static uchar ChrominanceQuantizationMatrix[64];
 
 	
-
-
 public:
 	// initialize writer
 	explicit BitStreamWriter(QFile& output) : outputFile(output) {}

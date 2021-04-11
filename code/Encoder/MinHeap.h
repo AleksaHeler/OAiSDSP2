@@ -3,8 +3,8 @@
 
 // A Min Heap: Collection of 
 // min-heap (or Huffman tree) nodes 
-struct MinHeap {
-
+struct MinHeap 
+{
 	// Current size of min heap 
 	int_least32_t size;
 

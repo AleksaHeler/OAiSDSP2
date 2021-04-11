@@ -8,7 +8,6 @@ void writeBit(struct BitWritter* bw, uint8_t bit)
 	bw->bit_idx++;
 	if (bw->bit_idx == 8)
 	{
-		//fwrite(&bw->buffer, 1, 1, bw->file);
 		bw->file->putChar(bw->buffer);
 		bw->bit_idx = 0;
 		bw->buffer = 0;
@@ -17,7 +16,6 @@ void writeBit(struct BitWritter* bw, uint8_t bit)
 
 void flushBitWritter(struct BitWritter* bw)
 {
-	//fwrite(&bw->buffer, 1, 1, bw->file);
 	bw->file->putChar(bw->buffer);
 	bw->bit_idx = 0;
 	bw->buffer = 0;

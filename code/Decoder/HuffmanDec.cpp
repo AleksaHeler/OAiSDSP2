@@ -90,21 +90,21 @@ struct HuffmanpNode* readDict(QFile& in, ushort dict_size, ushort* bytes_read)
 void calculateCodes(struct HuffmanpNode* root, uint8_t  arr[], int_least32_t  top, uint8_t** codes, int16_t* code_len)
 {
 	// Assign 0 to left edge and recur 
-	if (root->left) {
-
+	if (root->left) 
+	{
 		arr[top] = 0;
 		calculateCodes(root->left, arr, top + 1, codes, code_len);
 	}
 
 	// Assign 1 to right edge and recur 
-	if (root->right) {
-
+	if (root->right) 
+	{
 		arr[top] = 1;
 		calculateCodes(root->right, arr, top + 1, codes, code_len);
 	}
 
-	if (isLeaf(root)) {
-
+	if (isLeaf(root)) 
+	{
 		code_len[root->data + 32768] = top;
 		codes[root->data + 32768] = (uint8_t*) malloc(top * sizeof(uint8_t));
 		if (codes[root->data + 32768] == NULL)
@@ -161,16 +161,16 @@ void testDictrionary(struct HuffmanpNode* root)
 
 bool decodeHuffmanData(QFile& inputFile, std::vector<short>& v_Y, std::vector<short>& v_U, std::vector<short>& v_V)
 {
-	qCritical() << "HuffmanDecoding:";
+	//qCritical() << "HuffmanDecoding:";
 
 	ushort dict_size;
 	if (inputFile.getChar(((char*)&dict_size) + 1) == false)
 		return false;
 	if (inputFile.getChar((char*)&dict_size) == false)
 		return false;
-	qCritical() << "	Dictionary size:" << dict_size;
+	//qCritical() << "	Dictionary size:" << dict_size;
 
-	qCritical() << "	Reading dictionary...";
+	//qCritical() << "	Reading dictionary...";
 	ushort bytes_read = 0;
 	struct HuffmanpNode* root = readDict(inputFile, dict_size, &bytes_read);
 
@@ -178,7 +178,7 @@ bool decodeHuffmanData(QFile& inputFile, std::vector<short>& v_Y, std::vector<sh
 
 	uint8_t bit = readBit(&br);
 
-	qCritical() << "	Decoding data...";
+	//qCritical() << "	Decoding data...";
 	std::vector<short> vReader;
 	struct HuffmanpNode* curr = root;
 	while (bit != 0xFF)
@@ -199,7 +199,7 @@ bool decodeHuffmanData(QFile& inputFile, std::vector<short>& v_Y, std::vector<sh
 		bit = readBit(&br);
 	}
 
-	qCritical() << "	Reading Y component...";
+	//qCritical() << "	Reading Y component...";
 	int i = 0;
 	v_Y.push_back(vReader[i]);
 	v_Y.push_back(vReader[i + 1]);
@@ -211,7 +211,7 @@ bool decodeHuffmanData(QFile& inputFile, std::vector<short>& v_Y, std::vector<sh
 	}
 	i += 2;
 
-	qCritical() << "	Reading U component...";
+	//qCritical() << "	Reading U component...";
 	v_U.push_back(vReader[i]);
 	v_U.push_back(vReader[i + 1]);
 	while (vReader[i] != 0 || vReader[i + 1] != 0) //eob 
@@ -222,7 +222,7 @@ bool decodeHuffmanData(QFile& inputFile, std::vector<short>& v_Y, std::vector<sh
 	}
 	i += 2;
 
-	qCritical() << "	Reading V component...";
+	//qCritical() << "	Reading V component...";
 	v_V.push_back(vReader[i]);
 	v_V.push_back(vReader[i + 1]);
 	while (vReader[i] != 0 || vReader[i + 1] != 0) //eob 

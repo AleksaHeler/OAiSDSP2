@@ -24,7 +24,6 @@ bool BitStreamReader::readHeader()
 	delete[] header;
 
 	return true;
-
 }
 
 // Read image size
@@ -33,6 +32,33 @@ bool BitStreamReader::readImageInfo(int& width, int& height)
 	width = readShort();
 	height = readShort();
 
+	return true;
+}
+
+uchar BitStreamReader::readByte()
+{
+	uchar data;
+	inputFile.getChar((char*)&data);
+	return data;
+}
+
+ushort BitStreamReader::readShort()
+{
+	ushort data;
+	inputFile.getChar(((char*)&data) + 1);
+	inputFile.getChar((char*)&data);
+
+	return data;
+}
+
+int BitStreamReader::readData(char data[], int size)
+{
+	return inputFile.read((char*)data, size);
+}
+
+bool BitStreamReader::skip(int bytes)
+{
+	inputFile.seek(inputFile.pos() + bytes);
 	return true;
 }
 
@@ -157,14 +183,14 @@ uchar BitStreamReader::LuminanceQuantizationMatrix[64] =
 
 uchar BitStreamReader::ChrominanceQuantizationMatrix[64] =
 {
-	3, 3, 5, 6, 13, 13, 13, 13,
-	3, 3, 4, 9, 13, 13, 13, 13,
-	3, 4, 7, 13, 13, 13, 13, 13,
-	6, 9, 13, 13, 13, 13, 13, 13,
-	13, 13, 13, 13, 13, 13, 13, 13,
-	13, 13, 13, 13, 13, 13, 13, 13,
-	13, 13, 13, 13, 13, 13, 13, 13,
-	13, 13, 13, 13, 13, 13, 13, 13
+	2, 2, 3, 3, 7, 7, 7, 7,
+	2, 2, 2, 5, 7, 7, 7, 7,
+	2, 2, 4, 7, 7, 7, 7, 7,
+	3, 5, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7
 };
 
 
@@ -368,7 +394,7 @@ void BitStreamReader::performInverseDCTQuantization(short* dctCoeffs, int quanti
 	{
 		for (int i = 0; i<N; i++)
 		{
-			dctCoeffs[j*N + i] = floor(dctCoeffs[j*N + i] * (matrix[j*N + i]));
+			dctCoeffs[j*N + i] = floor(dctCoeffs[j*N + i] * (matrix[j*N + i]) + 0.5);
 		}
 	}
 }
@@ -378,7 +404,7 @@ void BitStreamReader::zeroRunLengthDecode(std::vector<short>& v, short* output, 
 	int j;
 	int i = 0;
 	int k = 0;
-	while(v[i] != 0 || v[i + 1] != 0)
+	while(v[i] != 0 || v[i + 1] != 0) //eob
 	{
 		for (j = 0; j < v[i]; j++)
 		{
@@ -515,8 +541,8 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 		qCritical() << "Error in Huffman decoding" << endl;
 		goto cleanup;
 	}
-	else
-		qCritical() << "Huffman decoding completed successfully" << endl;
+	//else
+		//qCritical() << "Huffman decoding completed successfully" << endl;
 
 
 	zeroRunLengthDecode(v_Y, dct_coeffs, xSize2, ySize2);
@@ -535,33 +561,4 @@ cleanup:
 	delete[] V_buff;
 
 	return ret_val;
-}
-
-
-uchar BitStreamReader::readByte()
-{
-	uchar data;
-	inputFile.getChar((char*)&data);
-	return data;
-}
-
-
-ushort BitStreamReader::readShort()
-{
-	ushort data;
-	inputFile.getChar(((char*)&data) + 1);
-	inputFile.getChar((char*)&data);
-
-	return data;
-}
-
-int BitStreamReader::readData(char data[], int size)
-{
-	return inputFile.read((char*)data, size);
-}
-
-bool BitStreamReader::skip(int bytes)
-{
-	inputFile.seek(inputFile.pos() + bytes);
-	return true;
 }

@@ -74,14 +74,14 @@ uchar BitStreamWriter::LuminanceQuantizationMatrix[64] =
 
 uchar BitStreamWriter::ChrominanceQuantizationMatrix[64] =
 {
-	3, 3, 5, 6, 25, 25, 25, 25,
-	3, 3, 4, 9, 25, 25, 25, 25,
-	3, 4, 7, 25, 25, 25, 25, 25,
-	6, 9, 25, 25, 25, 25, 25, 25,
-	25, 25, 25, 25, 25, 25, 25, 25,
-	25, 25, 25, 25, 25, 25, 25, 25,
-	25, 25, 25, 25, 25, 25, 25, 25,
-	25, 25, 25, 25, 25, 25, 25, 25
+	2, 2, 3, 3, 7, 7, 7, 7,
+	2, 2, 2, 5, 7, 7, 7, 7,
+	2, 2, 4, 7, 7, 7, 7, 7,
+	3, 5, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7
 };
 
 void BitStreamWriter::RGBtoYUV420(const uchar rgbImg[], int x, int y, uchar Y_buff[], char U_buff[], char V_buff[])
@@ -487,7 +487,7 @@ void BitStreamWriter::zeroRunLengthEncode(short* block, std::vector<short>* v, i
 		else
 		{
 			v->push_back(zero_cnt); //numbers of zeros
-			v->push_back(block[i]); //numbers after zeros
+			v->push_back(block[i]); //number after zeros
 
 			zero_cnt = 0;
 		}
@@ -555,10 +555,14 @@ bool BitStreamWriter::encode(uchar input[], int xSize, int ySize)
 
 	//writing in huffman code format
 	bool ret_val = doHuffmanEncoding(outputFile, v_Y, v_U, v_V);
+	if (ret_val == false)
+		qCritical() << "Error in HUffmanEncoding";
+	/*
 	if (ret_val)
-		qCritical() << "Huffman encoding completed successfully" << endl;
+		//qCritical() << "Huffman encoding completed successfully" << endl;
 	else
-		qCritical() << "Error in HuffmanEncoding" << endl;
+		//qCritical() << "Error in HuffmanEncoding" << endl;
+	*/
 
 	delete[] dct_coeffs;
 	delete[] dct_coeffs2;

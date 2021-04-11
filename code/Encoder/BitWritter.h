@@ -16,6 +16,3 @@ struct BitWritter
 void writeBit(struct BitWritter* bw, uint8_t bit);
 
 void flushBitWritter(struct BitWritter* bw);
-
-
-
