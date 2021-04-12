@@ -294,7 +294,12 @@ void BitStreamReader::IDCT(const short input[], char output[], int N, double* DC
 	for (int i = 0; i < N*N; i++)
 	{
 		double x = floor(DCTCoefficients[i] + 0.5);
-		output[i] = x;
+		if (x > 127)
+            		output[i] = 127;
+        	else if (x < -128)
+            		output[i] = -128;
+        	else
+            		output[i] = x;
 	}
 
 	delete[] temp;
