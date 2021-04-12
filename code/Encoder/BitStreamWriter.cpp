@@ -560,6 +560,11 @@ bool BitStreamWriter::encode(uchar input[], int xSize, int ySize)
 
 	delete[] dct_coeffs;
 	delete[] dct_coeffs2;
+	delete[] dct_coeffs3;
+
+	delete[] input2;
+	delete[] input3;
+	delete[] input4;
 
 	delete[] Y_buff;
 	delete[] U_buff;

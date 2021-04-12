@@ -295,11 +295,11 @@ void BitStreamReader::IDCT(const short input[], char output[], int N, double* DC
 	{
 		double x = floor(DCTCoefficients[i] + 0.5);
 		if (x > 127)
-            		output[i] = 127;
-        	else if (x < -128)
-            		output[i] = -128;
-        	else
-            		output[i] = x;
+            output[i] = 127;
+        else if (x < -128)
+            output[i] = -128;
+        else
+            output[i] = x;
 	}
 
 	delete[] temp;
@@ -558,6 +558,14 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 	YUV420toRGB(Y_buff, U_buff, V_buff, xSize, ySize, output);
 
 cleanup:
+	delete[] dct_coeffs;
+	delete[] dct_coeffs2;
+	delete[] dct_coeffs3;
+
+	delete[] input2;
+	delete[] input3;
+	delete[] input4;
+
 	delete[] Y_buff;
 	delete[] U_buff;
 	delete[] V_buff;
