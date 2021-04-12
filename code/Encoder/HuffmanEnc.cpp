@@ -284,8 +284,6 @@ void getDictSize(struct MinHeapNode* root, ushort* ret_val)
 
 bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<short> &v_U, std::vector<short> &v_V)
 {
-	//qCritical() << "HuffmanEncoding:";
-
 	int_least32_t* histogram = (int_least32_t*)malloc(sizeof(int_least32_t) * 65536);
 	if (histogram == NULL)
 	{
@@ -322,8 +320,6 @@ bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<s
 	int16_t* data = (int16_t*)malloc(non_zero_cnt * sizeof(int16_t));
 	int_least32_t* freqz = (int_least32_t*)malloc(non_zero_cnt * sizeof(int_least32_t));
 
-	//qCritical() << "	Initializing data and frequencies...";
-
 	int j = 0;
 	for (int i = 0; i < 65536; i++)
 	{
@@ -338,7 +334,6 @@ bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<s
 	delete[] histogram;
 
 	// Construct Huffman Tree 
-	//qCritical() << "	Building Huffman tree...";
 	struct MinHeapNode* root = buildHuffmanTree(data, freqz, non_zero_cnt);
 
 
@@ -365,10 +360,9 @@ bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<s
 		return false;
 	}
 
-	//qCritical() << "	Calculating codes...";
+
 	calculateCodes(root, arr, 0, codes, code_len);
 
-	//qCritical() << "	Writing dictionary size...";
 	ushort dict_size = 0;
 	getDictSize(root, &dict_size);
 	if (outputFile.putChar(*(((uchar*)&dict_size) + 1)) == false)
@@ -377,10 +371,9 @@ bool doHuffmanEncoding(QFile& outputFile, std::vector<short> &v_Y, std::vector<s
 	if (outputFile.putChar(*((uchar*)&dict_size)) == false)
 		return false;
 
-	//qCritical() << "	Writing dictionary...";
+
 	writeDict(outputFile, root);
 
-	//qCritical() << "	Writing data in encoded format...";
 	//Y writing
 	struct BitWritter bw = { &outputFile, 0, 0 };
 	for (auto it = v_Y.begin(); it != v_Y.end(); it++)

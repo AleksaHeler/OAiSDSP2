@@ -556,13 +556,7 @@ bool BitStreamWriter::encode(uchar input[], int xSize, int ySize)
 	//writing in huffman code format
 	bool ret_val = doHuffmanEncoding(outputFile, v_Y, v_U, v_V);
 	if (ret_val == false)
-		qCritical() << "Error in HUffmanEncoding";
-	/*
-	if (ret_val)
-		//qCritical() << "Huffman encoding completed successfully" << endl;
-	else
-		//qCritical() << "Error in HuffmanEncoding" << endl;
-	*/
+		qCritical() << "Error in HuffmanEncoding";
 
 	delete[] dct_coeffs;
 	delete[] dct_coeffs2;

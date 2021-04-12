@@ -541,9 +541,6 @@ bool BitStreamReader::decode(uchar* &output, int &xSize, int &ySize)
 		qCritical() << "Error in Huffman decoding" << endl;
 		goto cleanup;
 	}
-	//else
-		//qCritical() << "Huffman decoding completed successfully" << endl;
-
 
 	zeroRunLengthDecode(v_Y, dct_coeffs, xSize2, ySize2);
 	zeroRunLengthDecode(v_U, dct_coeffs2, xSize3, ySize3);

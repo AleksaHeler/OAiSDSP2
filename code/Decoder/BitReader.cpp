@@ -5,7 +5,6 @@ uint8_t readBit(struct BitReader* br)
 {
 	if (br->bit_idx == 0)
 	{
-		//if (fread(&br->buffer, 1, 1, br->file) == 0)
 		if (br->file.getChar((char*)&br->buffer) == false)
 		{
 			return 0xFF;
